@@ -1,59 +1,88 @@
 const Board = require('../models/Board');
-
-exports.getAll = async (req, res) =>
+exports.getAll = async (_id) =>
 {
     try
     {
-        const result = await (Board.find({}).sort({ created: "desc" }));
-        res.json(result);
+        const result = await (Board.find({ owner: _id }).sort({ created: "desc" }));
+        return result
     } catch (e)
     {
         console.log(e);
     }
 }
 
-exports.addBoard = async (req, res) =>
+exports.getOne = async (_id) =>
 {
     try
     {
-        const name = req.body.name;
-        if (!name)
+        const result = await (Board.findById(_id));
+        return result
+
+    } catch (e)
+    {
+        console.log(e);
+    }
+}
+
+exports.addBoard = async (board) =>
+{
+    try
+    {   
+        const result = await board.save();
+        return result;
+
+    } catch (e)
+    {
+        console.log(e)
+        return {};
+    }
+}
+
+exports.deleteBoard = async (_id) =>
+{
+    try
+    {
+
+        if (!_id)
         {
-            res.status(400).send({message: "400"});  
-            return;
+            return {};
         }
-        const created = new Date(req.body.created)
-        const newBoard = new Board();
-        newBoard.name = name;
-        newBoard.created = created;
-        const result = await newBoard.save();
-        res.json(result);
+
+        const result = await Board.deleteOne({ _id: _id }, (err, result) =>
+        {
+            if (err)
+            {
+                return {};
+            }
+            return result;
+        })
+
+        return result;
     } catch (e)
     {
         console.log(e)
     }
 }
 
-exports.deleteBoard = async (req, res) =>
+exports.updateBoard = async (_id, board) =>
 {
     try
     {
-        const _id = req.body._id;
-        console.log(_id);
-        if (!_id)
+        const result = await Board.findByIdAndUpdate( _id ,  board ,{new: true},  (err, result) =>
         {
-            res.status(400).send({message: "400"});  
-            return;
-        }
+            if (err)
+            {
+                console.log(err);
+                return {};
+            }
+        })
 
-        const result = await Board.find({ _id: _id }).remove(err =>
-        {
-            console.log(err);
-        });
+        return result;
 
-        res.json(result);
+        
     } catch (e)
     {
-        console.log(e)
+        console.log(e);
+        return {};
     }
 }

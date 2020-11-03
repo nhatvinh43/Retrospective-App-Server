@@ -2,28 +2,43 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema;
 
 const boardSchema = new Schema({
-    created: Date,
-    name: String,
+    created: { type: Date, required: true },
+    name: { type: String, required: true },
 
-    wentWell: [
-        {
+    owner: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        require: true
+    },
+
+    wentWell: [{
+        _id: {
             type: Schema.Types.ObjectId,
             ref: 'Post'
-        }
+        },
+        content: String,
+    }
+
     ],
 
-    toImprove: [
-        {
+    toImprove: [{
+
+        _id: {
             type: Schema.Types.ObjectId,
             ref: 'Post'
-        }
+        },
+        content: String,
+    }
     ],
 
-    actions: [
-        {
+    actions: [{
+
+        _id: {
             type: Schema.Types.ObjectId,
             ref: 'Post'
-        }
+        },
+        content: String,
+    }
     ],
 });
 
