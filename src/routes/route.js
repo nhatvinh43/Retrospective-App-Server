@@ -2,10 +2,12 @@ const express = require('express')
 const router = express.Router();
 const { getAll, getOne, addBoard, deleteBoard, updateBoard } = require('../controllers/BoardController');
 const { getOnePost, addPost, deletePost, updatePost} = require('../controllers/PostController');
+const {updateUser} = require('../controllers/UserController');
 const { UserValidator } = require('../validators/validator')
 const passport = require('passport')
 const jwt = require('jsonwebtoken');
 const Board = require('../models/Board');
+const User = require('../models/User')
 const Post = require('../models/Post')
 
 router.get('/', (req, res, next) =>
@@ -14,6 +16,61 @@ router.get('/', (req, res, next) =>
 })
 
 //Users
+router.put('/update', (req, res, next) =>
+{
+    passport.authenticate('jwt', { session: false }, async (err, user, info) =>
+    { 
+        if (err)
+        {
+            res.status.json({ message: err.message });
+        }
+        if (info)
+        {
+            res.status.json({ message: info.message });
+        }
+        else
+        {
+            const _id = user._id;
+
+            let tempUser = await User.findOne({ _id: _id }, (err, result) =>
+            {
+                if (err)
+                {
+                    res.status.json({ message: err.message });
+                }
+                
+            });
+
+            const newUser = new User(req.body);
+            tempUser = { ...newUser._doc, _id: _id };
+
+            const result = await updateUser(_id, tempUser);
+
+            res.status(200).json(result);
+
+        }
+    })(req, res, next)
+})
+router.get('/user', (req, res, next) =>
+{
+    passport.authenticate('jwt', {session: false}, async (err, user, info) => {
+        if (err)
+        {
+            res.status(400).json({ message: err.message });
+        }
+
+        if (info)
+        {
+            console.log(info);
+            res.status(400).json({ message: info.message });
+        }
+        else
+        {
+            res.status(200).json(user);
+        }
+
+    })(req, res, next)
+})
 router.post('/register', UserValidator, (req, res, next) =>
 {
     passport.authenticate('register', {session: false}, async (err, user, info) => {
