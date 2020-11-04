@@ -236,9 +236,11 @@ router.put('/boards/update', (req, res, next) =>
 
             const newBoard = new Board(req.body);
             board = { ...newBoard._doc };
+            board._id = _id;
+
+            console.log(board);
 
             const result = await updateBoard(_id, board);
-            console.log(result);
 
             res.status(200).json(result);
             
