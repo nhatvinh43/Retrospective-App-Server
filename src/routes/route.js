@@ -22,15 +22,13 @@ router.get('/auth/google', passport.authenticate('google', {scope: ['profile', '
 router.get('/auth/facebook', passport.authenticate('facebook', {session: false, scope: ['email']}));
 
 router.get('/auth/google/callback', (passport.authenticate('google', {session: false } )), (req, res) => {
-    user = req.user;
-    user.token = jwt.sign({ _id: user._id }, process.env.SECRET);
-    res.redirect(process.env.CLIENT + "/#/auth/success");
+   const token = jwt.sign({ _id: req.user._id }, process.env.SECRET);
+    res.redirect(process.env.CLIENT + "/#/auth/success/" + token);
 });
 
 router.get('/auth/facebook/callback', (passport.authenticate('facebook', {session: false } )), (req, res) => {
-    user = req.user;
-    user.token = jwt.sign({ _id: user._id }, process.env.SECRET);
-    res.redirect(process.env.CLIENT + "/#/auth/success");
+    const token = jwt.sign({ _id: req.user._id }, process.env.SECRET);
+    res.redirect(process.env.CLIENT + "/#/auth/success/" + token);
 });
 
 router.get('/auth/success', (req, res, next) => {
@@ -108,10 +106,8 @@ router.post('/register', UserValidator, (req, res, next) =>
         }
         else
         {
-            req.logIn(user, err =>
-            {
-                return res.status(200).json({ message: "User created" });
-            });
+            const token = jwt.sign({ _id: user._id }, process.env.SECRET);
+            res.status(200).json({auth: true, token: token,  message: "Signed up successfully" });
         }
 
     })(req, res, next)
