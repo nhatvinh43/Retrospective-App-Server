@@ -7,6 +7,10 @@ const bodyParser = require('body-parser')
 const routes = require('./src/routes/route')
 const cors = require('cors');
 const passport = require('passport');
+const http = require('http');
+const socket = require('socket.io');
+
+let boardsLastModified = {};
 
 const PORT = process.env.PORT || 8080
 const db = mongoose.connection;
@@ -26,6 +30,39 @@ app.use(passport.initialize());
 
 app.use('/', routes)
 
-app.listen(PORT, () => {console.log("Server started on http://localhost:"+PORT)})
+const server = http.createServer(app);
+
+const io = socket(server, {
+    cors: true,
+    origins: [process.env.CLIENT]
+});
+
+io.on('connection', socket => {
+
+    console.log('Client connected!');
+
+    socket.on('joinRoom', boardId => {
+        socket.join(boardId);
+        if (!boardsLastModified[boardId])
+        {
+            boardsLastModified[boardId] = new Date().getTime();
+        }
+    })
+
+    socket.on('boardChanged', (board) => {
+        
+        if(board.updatedOn > boardsLastModified[board._id])
+        {
+            boardsLastModified[board._id] = board.updatedOn;
+            io.to(board._id).emit('boardChanged', board);
+        }
+    })
+
+    socket.on('disconnect', () => {
+        console.log('Client disconnected!');
+    })
+})
+
+server.listen(PORT, () => {console.log("Server started on http://localhost:"+PORT)})
 
 module.exports = app;

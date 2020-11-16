@@ -8,7 +8,9 @@ const passport = require('passport')
 const jwt = require('jsonwebtoken');
 const Board = require('../models/Board');
 const User = require('../models/User')
-const Post = require('../models/Post')
+const Post = require('../models/Post');
+const { restart } = require('nodemon');
+let user = {};
 
 router.get('/', (req, res, next) =>
 {
@@ -16,6 +18,26 @@ router.get('/', (req, res, next) =>
 })
 
 //Users
+router.get('/auth/google', passport.authenticate('google', {scope: ['profile', 'email'], session: false}));
+router.get('/auth/facebook', passport.authenticate('facebook', {session: false, scope: ['email']}));
+
+router.get('/auth/google/callback', (passport.authenticate('google', {session: false } )), (req, res) => {
+    user = req.user;
+    user.token = jwt.sign({ _id: user._id }, process.env.SECRET);
+    res.redirect(process.env.CLIENT + "/#/auth/success");
+});
+
+router.get('/auth/facebook/callback', (passport.authenticate('facebook', {session: false } )), (req, res) => {
+    user = req.user;
+    user.token = jwt.sign({ _id: user._id }, process.env.SECRET);
+    res.redirect(process.env.CLIENT + "/#/auth/success");
+});
+
+router.get('/auth/success', (req, res, next) => {
+    res.status(200).json({auth: true, token: user.token,  message: "Logged in successfully" });
+})
+
+
 router.put('/update', (req, res, next) =>
 {
     passport.authenticate('jwt', { session: false }, async (err, user, info) =>
@@ -234,11 +256,14 @@ router.put('/boards/update', (req, res, next) =>
                 
             });
 
+            if(board && board.lastModified > req.body.lastModified)
+            {
+                res.status(200).json(board);
+            }
+
             const newBoard = new Board(req.body);
             board = { ...newBoard._doc };
             board._id = _id;
-
-            console.log(board);
 
             const result = await updateBoard(_id, board);
 

@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const boardSchema = new Schema({
     created: { type: Date, required: true },
     name: { type: String, required: true },
+    lastModified: Date,
 
     owner: {
         type: Schema.Types.ObjectId,

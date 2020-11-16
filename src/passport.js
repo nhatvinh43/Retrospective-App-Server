@@ -6,7 +6,70 @@ const BCRYPT_SALT_ROUNDS = 12;
 const passport = require('passport'),
     localStrategy = require('passport-local'),
     JWTStrategy = require('passport-jwt').Strategy,
-    ExtractJWT = require('passport-jwt').ExtractJwt;
+    ExtractJWT = require('passport-jwt').ExtractJwt,
+    googleStrategy = require('passport-google-oauth').OAuth2Strategy,
+    facebookStrategy = require('passport-facebook').Strategy;
+
+passport.use(new facebookStrategy({
+    clientID: process.env.FACEBOOK_CLIENT_ID,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+    callbackURL: process.env.URL + "/auth/facebook/callback",
+    profileFields: [ 'displayName', 'name', 'photos', 'email']
+},async (accessToken, refreshToken, profile, done) => {
+
+    try{
+        let user = await User.findOne({email: profile.emails[0].value });
+
+        if(!user)
+        {
+            user = new User();
+            user.name = profile.name.familyName + ' ' + profile.name.middleName + ' ' + profile.name.givenName;
+            user.dob = profile.birthday;
+            user.email = profile.emails[0].value;
+            user.username = user.email.substring(0, user.email.indexOf('@'));
+
+            const result = await user.save();
+            return done(null, result);
+        }
+        
+        return done(null, user);
+
+        
+    }catch(err)
+    {
+        return done(err);
+    }
+}))
+
+passport.use(new googleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.URL + "/auth/google/callback",
+},  async (accessToken, refreshToken, profile, done) => {
+
+    try{
+        let user = await User.findOne({email: profile.emails[0].value });
+        
+        if(!user)
+        {
+            user = new User();
+            user.name = profile.name.familyName + " " + profile.name.givenName;
+            user.dob = profile.birthday;
+            user.email = profile.emails[0].value;
+            user.username = user.email.substring(0, user.email.indexOf('@'));
+
+            const result = await user.save();
+            return done(null, result);
+        }
+        
+        return done(null, user);
+
+        
+    }catch(err)
+    {
+        return done(err);
+    }
+}))
 
 passport.use('register', new localStrategy({
     usernameField: 'username',
